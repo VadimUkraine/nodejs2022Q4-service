@@ -5,10 +5,14 @@ import { InMemoryArtistsStore } from './store/in-memory-artists.store';
 import { artistMessages } from '../messages/error.messages';
 import { constants as httpStatus } from 'http2';
 import { v4 as uuidv4 } from 'uuid';
+import { AlbumService } from '../album/album.service';
 
 @Injectable()
 export class ArtistService {
-  constructor(private store: InMemoryArtistsStore) {}
+  constructor(
+    private store: InMemoryArtistsStore,
+    private albumService: AlbumService,
+  ) {}
 
   async create(createArtistDto: CreateArtistDto) {
     const artist = {
@@ -69,5 +73,14 @@ export class ArtistService {
     }
 
     await this.store.remove(artist.id);
+
+    const albums = await this.albumService.findAll();
+
+    for (const album of albums) {
+      if (album.artistId === artist.id) {
+        album.artistId = null;
+        await this.albumService.update(album.id, album);
+      }
+    }
   }
 }
