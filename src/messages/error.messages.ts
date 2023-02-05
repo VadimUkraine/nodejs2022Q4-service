@@ -12,4 +12,10 @@ const albumMessages = {
   ARTIST_ID_NOT_UUID: 'Artist ID is not UUID',
 };
 
-export { userMessages, artistMessages, albumMessages };
+const trackMessages = {
+  TRACK_NOT_FOUND: 'Track not found',
+  ARTIST_ID_NOT_UUID: 'Artist ID is not UUID',
+  ALBUM_ID_NOT_UUID: 'Album ID is not UUID',
+};
+
+export { userMessages, artistMessages, albumMessages, trackMessages };

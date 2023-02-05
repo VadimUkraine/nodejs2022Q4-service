@@ -5,12 +5,26 @@ import { InMemoryAlbumsStore } from './store/in-memory-albums.store';
 import { constants as httpStatus } from 'http2';
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 import { albumMessages } from '../messages/error.messages';
+import { TrackService } from '../track/track.service';
 
 @Injectable()
 export class AlbumService {
-  constructor(private store: InMemoryAlbumsStore) {}
+  constructor(
+    private store: InMemoryAlbumsStore,
+    private trackService: TrackService,
+  ) {}
 
   async create(createAlbumDto: CreateAlbumDto) {
+    const { artistId } = createAlbumDto;
+    const notArtisdIdIsUUID = !uuidValidate(artistId);
+
+    if (artistId !== null && notArtisdIdIsUUID) {
+      throw new HttpException(
+        albumMessages.ARTIST_ID_NOT_UUID,
+        httpStatus.HTTP_STATUS_BAD_REQUEST,
+      );
+    }
+
     const album = {
       id: uuidv4(),
       ...createAlbumDto,
@@ -80,5 +94,14 @@ export class AlbumService {
     }
 
     await this.store.remove(album.id);
+
+    const tracks = await this.trackService.findAll();
+
+    for (const track of tracks) {
+      if (track.albumId === album.id) {
+        track.albumId = null;
+        await this.trackService.update(track.id, track);
+      }
+    }
   }
 }

@@ -6,12 +6,14 @@ import { artistMessages } from '../messages/error.messages';
 import { constants as httpStatus } from 'http2';
 import { v4 as uuidv4 } from 'uuid';
 import { AlbumService } from '../album/album.service';
+import { TrackService } from '../track/track.service';
 
 @Injectable()
 export class ArtistService {
   constructor(
     private store: InMemoryArtistsStore,
     private albumService: AlbumService,
+    private trackService: TrackService,
   ) {}
 
   async create(createArtistDto: CreateArtistDto) {
@@ -80,6 +82,15 @@ export class ArtistService {
       if (album.artistId === artist.id) {
         album.artistId = null;
         await this.albumService.update(album.id, album);
+      }
+    }
+
+    const tracks = await this.trackService.findAll();
+
+    for (const track of tracks) {
+      if (track.artistId === artist.id) {
+        track.artistId = null;
+        await this.trackService.update(track.id, track);
       }
     }
   }

@@ -8,6 +8,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );
+  app.enableCors();
 
   await app.listen(PORT, () => console.log(`Server started on port = ${PORT}`));
 }
