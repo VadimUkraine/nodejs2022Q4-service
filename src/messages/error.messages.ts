@@ -3,4 +3,8 @@ const userMessages = {
   INVALID_PASSWORD: 'Old password is invalid',
 };
 
-export { userMessages };
+const artistMessages = {
+  ARTIST_NOT_FOUND: 'Artist not found',
+};
+
+export { userMessages, artistMessages };
