@@ -6,6 +6,7 @@ import { constants as httpStatus } from 'http2';
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 import { albumMessages } from '../messages/error.messages';
 import { TrackService } from '../track/track.service';
+import { AlbumInterface } from './interfaces/album.interface';
 
 @Injectable()
 export class AlbumService {
@@ -13,6 +14,14 @@ export class AlbumService {
     private store: InMemoryAlbumsStore,
     private trackService: TrackService,
   ) {}
+
+  async getAlbumsByIds(albums: string[]) {
+    const albumsFromMemory = await this.store.findAll();
+
+    return albumsFromMemory.filter((album: AlbumInterface) =>
+      albums.includes(album.id),
+    );
+  }
 
   async create(createAlbumDto: CreateAlbumDto) {
     const { artistId } = createAlbumDto;

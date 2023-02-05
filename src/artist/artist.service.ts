@@ -7,6 +7,7 @@ import { constants as httpStatus } from 'http2';
 import { v4 as uuidv4 } from 'uuid';
 import { AlbumService } from '../album/album.service';
 import { TrackService } from '../track/track.service';
+import { ArtistInterface } from './interfaces/artist.interface';
 
 @Injectable()
 export class ArtistService {
@@ -15,6 +16,14 @@ export class ArtistService {
     private albumService: AlbumService,
     private trackService: TrackService,
   ) {}
+
+  async getArtistsByIds(artists: string[]) {
+    const artistsFromMemory = await this.store.findAll();
+
+    return artistsFromMemory.filter((artist: ArtistInterface) =>
+      artists.includes(artist.id),
+    );
+  }
 
   async create(createArtistDto: CreateArtistDto) {
     const artist = {

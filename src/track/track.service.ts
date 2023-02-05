@@ -5,10 +5,19 @@ import { InMemoryTracksStore } from './store/in-memory-tracks.store';
 import { constants as httpStatus } from 'http2';
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 import { trackMessages } from '../messages/error.messages';
+import { TrackInterface } from './interfaces/track.interface';
 
 @Injectable()
 export class TrackService {
   constructor(private store: InMemoryTracksStore) {}
+
+  async getTracksByIds(tracks: string[]) {
+    const tracksFromMemory = await this.store.findAll();
+
+    return tracksFromMemory.filter((track: TrackInterface) =>
+      tracks.includes(track.id),
+    );
+  }
 
   async create(createTrackDto: CreateTrackDto) {
     const { artistId, albumId } = createTrackDto;

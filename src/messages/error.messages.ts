@@ -18,4 +18,16 @@ const trackMessages = {
   ALBUM_ID_NOT_UUID: 'Album ID is not UUID',
 };
 
-export { userMessages, artistMessages, albumMessages, trackMessages };
+const favsMessages = {
+  TRACK_NOT_IN_FAVS: 'There is no such track in favorites',
+  ALBUM_NOT_IN_FAVS: 'There is no such album in favorites',
+  ARTIST_NOT_IN_FAVS: 'There is no such artist in favorites',
+};
+
+export {
+  userMessages,
+  artistMessages,
+  albumMessages,
+  trackMessages,
+  favsMessages,
+};

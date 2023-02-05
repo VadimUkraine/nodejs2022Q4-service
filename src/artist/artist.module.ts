@@ -9,5 +9,6 @@ import { TrackModule } from '../track/track.module';
   controllers: [ArtistController],
   providers: [ArtistService, InMemoryArtistsStore],
   imports: [AlbumModule, TrackModule],
+  exports: [ArtistService],
 })
 export class ArtistModule {}
