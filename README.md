@@ -8,13 +8,27 @@
 ## Downloading
 
 ```
-git clone {repository URL}
+git clone https://github.com/VadimUkraine/nodejs2022Q4-service.git
+
+cd nodejs2022Q4-service
+
+git checkout develop
 ```
 
 ## Installing NPM modules
 
 ```
 npm install
+```
+
+## ENV file
+
+You need to create `.env` file in root directory of the project.
+
+This can be done from the template:
+
+```
+cp .env.example .env
 ```
 
 ## Running application
