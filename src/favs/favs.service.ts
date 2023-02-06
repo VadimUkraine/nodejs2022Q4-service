@@ -38,10 +38,15 @@ export class FavsService {
   async addTrack(id: string) {
     try {
       const track = await this.trackService.findOne(id);
+      const favs = await this.store.getFavorites();
 
-      await this.store.addTrack(track.id);
+      if (!favs.tracks.includes(track.id)) {
+        await this.store.addTrack(track.id);
 
-      return `This track #${id} was added to favorites`;
+        return `This track #${id} was added to favorites`;
+      } else {
+        return `This track #${id} alredy exists in favorites and not add to favorites again`;
+      }
     } catch (error) {
       errorTransformer(error);
     }
@@ -67,10 +72,15 @@ export class FavsService {
   async addAlbum(id: string) {
     try {
       const album = await this.albumService.findOne(id);
+      const favs = await this.store.getFavorites();
 
-      await this.store.addAlbum(album.id);
+      if (!favs.albums.includes(album.id)) {
+        await this.store.addAlbum(album.id);
 
-      return `This album #${id} was added to favorites`;
+        return `This album #${id} was added to favorites`;
+      } else {
+        return `This album #${id} alredy exists in favorites and not add to favorites again`;
+      }
     } catch (error) {
       errorTransformer(error);
     }
@@ -97,9 +107,15 @@ export class FavsService {
     try {
       const artist = await this.artistService.findOne(id);
 
-      await this.store.addArtist(artist.id);
+      const favs = await this.store.getFavorites();
 
-      return `This artist #${id} was added to favorites`;
+      if (!favs.artists.includes(artist.id)) {
+        await this.store.addArtist(artist.id);
+
+        return `This artist #${id} was added to favorites`;
+      } else {
+        return `This artist #${id} alredy exists in favorites and not add to favorites again`;
+      }
     } catch (error) {
       errorTransformer(error);
     }

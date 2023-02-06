@@ -1,4 +1,4 @@
-import { Injectable, HttpException } from '@nestjs/common';
+import { Injectable, HttpException, Inject, forwardRef } from '@nestjs/common';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
 import { InMemoryArtistsStore } from './store/in-memory-artists.store';
@@ -13,6 +13,7 @@ import { ArtistInterface } from './interfaces/artist.interface';
 export class ArtistService {
   constructor(
     private store: InMemoryArtistsStore,
+    @Inject(forwardRef(() => AlbumService))
     private albumService: AlbumService,
     private trackService: TrackService,
   ) {}

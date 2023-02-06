@@ -1,4 +1,4 @@
-import { Injectable, HttpException } from '@nestjs/common';
+import { Injectable, HttpException, Inject, forwardRef } from '@nestjs/common';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { InMemoryTracksStore } from './store/in-memory-tracks.store';
@@ -6,10 +6,18 @@ import { constants as httpStatus } from 'http2';
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 import { trackMessages } from '../messages/error.messages';
 import { TrackInterface } from './interfaces/track.interface';
+import { ArtistService } from '../artist/artist.service';
+import { AlbumService } from '../album/album.service';
 
 @Injectable()
 export class TrackService {
-  constructor(private store: InMemoryTracksStore) {}
+  constructor(
+    @Inject(forwardRef(() => AlbumService))
+    private albumService: AlbumService,
+    @Inject(forwardRef(() => ArtistService))
+    private artistService: ArtistService,
+    private store: InMemoryTracksStore,
+  ) {}
 
   async getTracksByIds(tracks: string[]) {
     const tracksFromMemory = await this.store.findAll();
@@ -31,11 +39,19 @@ export class TrackService {
       );
     }
 
+    if (artistId !== null) {
+      await this.artistService.findOne(artistId);
+    }
+
     if (albumId !== null && notAlbumIdIsUUID) {
       throw new HttpException(
         trackMessages.ALBUM_ID_NOT_UUID,
         httpStatus.HTTP_STATUS_BAD_REQUEST,
       );
+    }
+
+    if (albumId !== null) {
+      await this.albumService.findOne(albumId);
     }
 
     const track = {
@@ -88,11 +104,19 @@ export class TrackService {
       );
     }
 
+    if (artistId !== null) {
+      await this.artistService.findOne(artistId);
+    }
+
     if (albumId !== null && notAlbumIdIsUUID) {
       throw new HttpException(
         trackMessages.ALBUM_ID_NOT_UUID,
         httpStatus.HTTP_STATUS_BAD_REQUEST,
       );
+    }
+
+    if (albumId !== null) {
+      await this.albumService.findOne(albumId);
     }
 
     const updatedTrack = {

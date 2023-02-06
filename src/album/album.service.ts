@@ -1,4 +1,4 @@
-import { Injectable, HttpException } from '@nestjs/common';
+import { Injectable, HttpException, Inject, forwardRef } from '@nestjs/common';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 import { InMemoryAlbumsStore } from './store/in-memory-albums.store';
@@ -7,12 +7,15 @@ import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 import { albumMessages } from '../messages/error.messages';
 import { TrackService } from '../track/track.service';
 import { AlbumInterface } from './interfaces/album.interface';
+import { ArtistService } from '../artist/artist.service';
 
 @Injectable()
 export class AlbumService {
   constructor(
     private store: InMemoryAlbumsStore,
     private trackService: TrackService,
+    @Inject(forwardRef(() => ArtistService))
+    private artistService: ArtistService,
   ) {}
 
   async getAlbumsByIds(albums: string[]) {
@@ -32,6 +35,10 @@ export class AlbumService {
         albumMessages.ARTIST_ID_NOT_UUID,
         httpStatus.HTTP_STATUS_BAD_REQUEST,
       );
+    }
+
+    if (artistId !== null) {
+      await this.artistService.findOne(artistId);
     }
 
     const album = {
@@ -80,6 +87,10 @@ export class AlbumService {
         albumMessages.ARTIST_ID_NOT_UUID,
         httpStatus.HTTP_STATUS_BAD_REQUEST,
       );
+    }
+
+    if (artistId !== null) {
+      await this.artistService.findOne(artistId);
     }
 
     const updatedAlbum = {
