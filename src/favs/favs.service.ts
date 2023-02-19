@@ -26,11 +26,11 @@ export class FavsService {
       tracks: [],
     };
 
-    response.artists = await this.artistService.getArtistsByIds(favs.artists);
+    // response.artists = await this.artistService.getArtistsByIds(favs.artists);
 
-    response.albums = await this.albumService.getAlbumsByIds(favs.albums);
+    // response.albums = await this.albumService.getAlbumsByIds(favs.albums);
 
-    response.tracks = await this.trackService.getTracksByIds(favs.tracks);
+    // response.tracks = await this.trackService.getTracksByIds(favs.tracks);
 
     return response;
   }

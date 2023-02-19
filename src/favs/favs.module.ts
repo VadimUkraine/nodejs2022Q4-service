@@ -7,8 +7,8 @@ import { AlbumModule } from '../album/album.module';
 import { ArtistModule } from '../artist/artist.module';
 
 @Module({
-  controllers: [FavsController],
-  providers: [FavsService, InMemoryFavoritesStore],
-  imports: [TrackModule, AlbumModule, ArtistModule],
+  // controllers: [FavsController],
+  // providers: [FavsService, InMemoryFavoritesStore],
+  // imports: [TrackModule, AlbumModule, ArtistModule],
 })
 export class FavsModule {}

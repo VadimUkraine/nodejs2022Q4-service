@@ -2,7 +2,7 @@ import { IsUUID } from 'class-validator';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { getTimestamp } from '../../helpers';
 
-@Entity('user')
+@Entity()
 export class User {
   @IsUUID()
   @PrimaryGeneratedColumn('uuid')

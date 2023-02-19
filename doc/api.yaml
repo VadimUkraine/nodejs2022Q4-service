@@ -395,7 +395,7 @@ paths:
       description: Delete track from library
       responses:
         204:
-          description: Delelted succesfully
+          description: Deleted succesfully
         400:
           description: Bad request. trackId is invalid (not uuid)
         404:
@@ -623,7 +623,7 @@ paths:
       description: Delete artist from library
       responses:
         204:
-          description: Delelted succesfully
+          description: Deleted succesfully
         400:
           description: Bad request. artistId is invalid (not uuid)
         404:
