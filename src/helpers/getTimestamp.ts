@@ -1,5 +1,5 @@
 const getTimestamp = () => {
-  return new Date().getTime();
+  return Math.floor(Date.now() / 1000);
 };
 
 export default getTimestamp;
