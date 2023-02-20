@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 import { env } from 'process';
-import { DataSourceOptions } from 'typeorm';
+import { DataSource, DataSourceOptions } from 'typeorm';
 import { User } from './user/entities/user.entity';
 import { Album } from './album/entities/album.entity';
 import { Artist } from './artist/entities/artist.entity';
@@ -9,9 +9,9 @@ import { Favs } from './favs/entities/favs.entity';
 
 dotenv.config();
 
-export const typeormConfig = {
+export const typeormConfig: DataSourceOptions = {
   type: 'postgres',
-  host: env.POSTGRES_HOST as string,
+  host: 'localhost',
   port: parseInt(env.POSTGRES_PORT as string) as number,
   username: env.POSTGRES_USER as string,
   password: env.POSTGRES_PASSWORD as string,
@@ -20,5 +20,6 @@ export const typeormConfig = {
   synchronize: false,
   logging: true,
   migrations: [__dirname + '/migrations/*.js'],
-  migrationsRun: true,
-} as DataSourceOptions;
+};
+
+export const dataSource = new DataSource(typeormConfig);
