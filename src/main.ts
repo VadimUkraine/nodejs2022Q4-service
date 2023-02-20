@@ -5,7 +5,7 @@ import 'dotenv/config';
 import { OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import * as yaml from 'js-yaml';
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { resolve } from 'path';
 
 async function bootstrap() {
   const PORT = process.env.PORT || 4000;
@@ -16,9 +16,8 @@ async function bootstrap() {
   app.enableCors();
 
   const document = yaml.load(
-    readFileSync(join(__dirname, '..', 'doc', 'api.yaml'), 'utf8'),
+    readFileSync(resolve('doc', 'api.yaml'), 'utf8'),
   ) as OpenAPIObject;
-
   SwaggerModule.setup('doc', app, document);
 
   await app.listen(PORT, () => console.log(`Server started on port = ${PORT}`));
