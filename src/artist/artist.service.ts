@@ -22,7 +22,7 @@ export class ArtistService {
   }
 
   async findOne(id: string) {
-    const artist = await this.artistsRepository.findOneBy({ id });  
+    const artist = await this.artistsRepository.findOneBy({ id });
 
     if (!artist) {
       throw new HttpException(
@@ -54,7 +54,7 @@ export class ArtistService {
     }
 
     await this.artistsRepository.update(id, { ...updateArtistDto });
-    
+
     return await this.artistsRepository.findOneBy({ id });
   }
 

@@ -3,7 +3,11 @@ import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { constants as httpStatus } from 'http2';
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
-import { trackMessages, artistMessages, albumMessages } from '../messages/error.messages';
+import {
+  trackMessages,
+  artistMessages,
+  albumMessages,
+} from '../messages/error.messages';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Track } from './entities/track.entity';
@@ -94,7 +98,7 @@ export class TrackService {
     const notArtisdIdIsUUID = !uuidValidate(artistId);
     const notAlbumIdIsUUID = !uuidValidate(albumId);
 
-    const track = await this.tracksRepository.findOneBy({ id })
+    const track = await this.tracksRepository.findOneBy({ id });
 
     if (!track) {
       throw new HttpException(
@@ -139,7 +143,7 @@ export class TrackService {
       }
     }
 
-    await this.tracksRepository.update(id, {...updateTrackDto });
+    await this.tracksRepository.update(id, { ...updateTrackDto });
 
     return await this.tracksRepository.findOneBy({ id });
   }

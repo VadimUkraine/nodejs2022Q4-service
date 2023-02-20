@@ -1,140 +1,248 @@
 import { Injectable, HttpException } from '@nestjs/common';
-import { InMemoryFavoritesStore } from './store/in-memory-favs.store';
-import { TrackService } from '../track/track.service';
-import { AlbumService } from '../album/album.service';
-import { ArtistService } from '../artist/artist.service';
-import { FavoritesRepsonse } from './interfaces/favs.response.interace';
-import { favsMessages } from '../messages/error.messages';
+import {
+  FavoritesRepsonse,
+  FavsResponse,
+} from './interfaces/favs.response.interace';
+import {
+  favsMessages,
+  trackMessages,
+  albumMessages,
+  artistMessages,
+} from '../messages/error.messages';
 import { constants as httpStatus } from 'http2';
-import { errorTransformer } from '../helpers';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Track } from '../track/entities/track.entity';
+import { Album } from '../album/entities/album.entity';
+import { Artist } from '../artist/entities/artist.entity';
+import { Favs, FAVS_TYPE } from './entities/favs.entity';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class FavsService {
   constructor(
-    private store: InMemoryFavoritesStore,
-    private trackService: TrackService,
-    private albumService: AlbumService,
-    private artistService: ArtistService,
+    @InjectRepository(Track)
+    private readonly trackRepository: Repository<Track>,
+    @InjectRepository(Artist)
+    private artistRepository: Repository<Artist>,
+    @InjectRepository(Album)
+    private albumRepository: Repository<Album>,
+    @InjectRepository(Favs)
+    private favsRepository: Repository<Favs>,
   ) {}
 
   async getFavorites() {
-    const favs = await this.store.getFavorites();
+    try {
+      const favs = await this.getFavsIds();
 
-    const response: FavoritesRepsonse = {
-      artists: [],
-      albums: [],
-      tracks: [],
-    };
+      const result: FavsResponse = {
+        tracks:
+          favs.trackIds.length === 0
+            ? []
+            : await this.trackRepository
+                .createQueryBuilder('track')
+                .where('track.id IN (:...tracks)', {
+                  tracks: favs.trackIds,
+                })
+                .getMany(),
+        artists:
+          favs.artistIds.length === 0
+            ? []
+            : await this.artistRepository
+                .createQueryBuilder('artist')
+                .where('artist.id IN (:...artists)', {
+                  artists: favs.artistIds,
+                })
+                .getMany(),
+        albums:
+          favs.albumIds.length === 0
+            ? []
+            : await this.albumRepository
+                .createQueryBuilder('album')
+                .where('album.id IN (:...albums)', {
+                  albums: favs.albumIds,
+                })
+                .getMany(),
+      };
 
-    // response.artists = await this.artistService.getArtistsByIds(favs.artists);
-
-    // response.albums = await this.albumService.getAlbumsByIds(favs.albums);
-
-    // response.tracks = await this.trackService.getTracksByIds(favs.tracks);
-
-    return response;
+      return result;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async addTrack(id: string) {
     try {
-      const track = await this.trackService.findOne(id);
-      const favs = await this.store.getFavorites();
+      const favs = await this.getFavsIds();
+      const track = await this.trackRepository.findOneBy({ id });
 
-      if (!favs.tracks.includes(track.id)) {
-        await this.store.addTrack(track.id);
+      if (!track) {
+        throw new HttpException(
+          trackMessages.TRACK_NOT_FOUND,
+          httpStatus.HTTP_STATUS_UNPROCESSABLE_ENTITY,
+        );
+      }
 
-        return `This track #${id} was added to favorites`;
+      if (!favs.trackIds.find((el) => el === track.id)) {
+        const newEntity: Favs = {
+          id: uuidv4(),
+          type: FAVS_TYPE.TRACK,
+          artistId: null,
+          albumId: null,
+          trackId: id,
+        };
+
+        const newTrack = await this.favsRepository.create({
+          ...newEntity,
+        });
+
+        await this.favsRepository.save(newTrack);
+
+        return `This track ${id} was added to favorites`;
       } else {
-        return `This track #${id} alredy exists in favorites and not add to favorites again`;
+        return `This track ${id} alredy exists in favorites and not add to favorites again`;
       }
     } catch (error) {
-      errorTransformer(error);
+      throw error;
     }
   }
 
   async removeTrack(id: string) {
-    const { tracks } = await this.store.getFavorites();
+    const track = await this.favsRepository.findOneBy({ trackId: id });
 
-    const index = tracks.findIndex((trackID: string) => trackID === id);
-
-    if (index !== -1) {
-      this.store.removeTrack(index);
-    }
-
-    if (index === -1) {
+    if (!track) {
       throw new HttpException(
         favsMessages.TRACK_NOT_IN_FAVS,
         httpStatus.HTTP_STATUS_NOT_FOUND,
       );
     }
+
+    await this.favsRepository.delete({ id: track.id });
   }
 
   async addAlbum(id: string) {
     try {
-      const album = await this.albumService.findOne(id);
-      const favs = await this.store.getFavorites();
+      const favs = await this.getFavsIds();
+      const album = await this.albumRepository.findOneBy({ id });
 
-      if (!favs.albums.includes(album.id)) {
-        await this.store.addAlbum(album.id);
+      if (!album) {
+        throw new HttpException(
+          albumMessages.ALBUM_NOT_FOUND,
+          httpStatus.HTTP_STATUS_UNPROCESSABLE_ENTITY,
+        );
+      }
 
-        return `This album #${id} was added to favorites`;
+      if (!favs.albumIds.find((el) => el === album.id)) {
+        const newEntity: Favs = {
+          id: uuidv4(),
+          type: FAVS_TYPE.ALBUM,
+          artistId: null,
+          albumId: id,
+          trackId: null,
+        };
+
+        const newAlbum = await this.favsRepository.create({
+          ...newEntity,
+        });
+
+        await this.favsRepository.save(newAlbum);
+
+        return `This album ${id} was added to favorites`;
       } else {
-        return `This album #${id} alredy exists in favorites and not add to favorites again`;
+        return `This album ${id} alredy exists in favorites and not add to favorites again`;
       }
     } catch (error) {
-      errorTransformer(error);
+      throw error;
     }
   }
 
   async removeAlbum(id: string) {
-    const { albums } = await this.store.getFavorites();
+    const album = await this.favsRepository.findOneBy({ albumId: id });
 
-    const index = albums.findIndex((albumID: string) => albumID === id);
-
-    if (index !== -1) {
-      this.store.removeAlbum(index);
-    }
-
-    if (index === -1) {
+    if (!album) {
       throw new HttpException(
         favsMessages.ALBUM_NOT_IN_FAVS,
         httpStatus.HTTP_STATUS_NOT_FOUND,
       );
     }
+
+    await this.favsRepository.delete({ id: album.id });
   }
 
   async addArtist(id: string) {
     try {
-      const artist = await this.artistService.findOne(id);
+      const favs = await this.getFavsIds();
+      const artist = await this.artistRepository.findOneBy({ id });
 
-      const favs = await this.store.getFavorites();
+      if (!artist) {
+        throw new HttpException(
+          artistMessages.ARTIST_NOT_FOUND,
+          httpStatus.HTTP_STATUS_UNPROCESSABLE_ENTITY,
+        );
+      }
 
-      if (!favs.artists.includes(artist.id)) {
-        await this.store.addArtist(artist.id);
+      if (!favs.artistIds.find((el) => el === artist.id)) {
+        const newEntity: Favs = {
+          id: uuidv4(),
+          type: FAVS_TYPE.ARTIST,
+          artistId: id,
+          albumId: null,
+          trackId: null,
+        };
 
-        return `This artist #${id} was added to favorites`;
+        const newArtist = await this.favsRepository.create({
+          ...newEntity,
+        });
+
+        await this.favsRepository.save(newArtist);
+
+        return `This artist ${id} was added to favorites`;
       } else {
-        return `This artist #${id} alredy exists in favorites and not add to favorites again`;
+        return `This artist ${id} alredy exists in favorites and not add to favorites again`;
       }
     } catch (error) {
-      errorTransformer(error);
+      throw error;
     }
   }
 
   async removeArtist(id: string) {
-    const { artists } = await this.store.getFavorites();
+    const artist = await this.favsRepository.findOneBy({ artistId: id });
 
-    const index = artists.findIndex((artistID: string) => artistID === id);
-
-    if (index !== -1) {
-      this.store.removeArtist(index);
-    }
-
-    if (index === -1) {
+    if (!artist) {
       throw new HttpException(
         favsMessages.ARTIST_NOT_IN_FAVS,
         httpStatus.HTTP_STATUS_NOT_FOUND,
       );
     }
+
+    await this.favsRepository.delete({ id: artist.id });
+  }
+
+  async getFavsIds() {
+    const favsCollection = await this.favsRepository.find();
+
+    const response: FavoritesRepsonse = {
+      artistIds: [],
+      albumIds: [],
+      trackIds: [],
+    };
+
+    favsCollection.forEach((entity) => {
+      switch (entity.type) {
+        case FAVS_TYPE.ARTIST:
+          response.artistIds.push(entity.artistId);
+          break;
+        case FAVS_TYPE.ALBUM:
+          response.albumIds.push(entity.albumId);
+          break;
+        case FAVS_TYPE.TRACK:
+          response.trackIds.push(entity.trackId);
+          break;
+        default:
+          break;
+      }
+    });
+
+    return response;
   }
 }

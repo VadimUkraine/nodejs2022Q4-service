@@ -10,5 +10,4 @@ import { Artist } from './entities/artist.entity';
   imports: [TypeOrmModule.forFeature([Artist])],
   exports: [TypeOrmModule],
 })
-
 export class ArtistModule {}

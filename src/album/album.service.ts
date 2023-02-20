@@ -9,7 +9,6 @@ import { Repository } from 'typeorm';
 import { Album } from './entities/album.entity';
 import { Artist } from '../artist/entities/artist.entity';
 
-
 @Injectable()
 export class AlbumService {
   constructor(
@@ -40,8 +39,8 @@ export class AlbumService {
 
   async create(createAlbumDto: CreateAlbumDto) {
     const { artistId } = createAlbumDto;
-    const notArtisIdIsUUID = !uuidValidate(artistId);  
-  
+    const notArtisIdIsUUID = !uuidValidate(artistId);
+
     if (artistId !== null && notArtisIdIsUUID) {
       throw new HttpException(
         albumMessages.ARTIST_ID_NOT_UUID,

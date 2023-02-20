@@ -1,7 +1,4 @@
-import {
-  IsOptional,
-  IsUUID,
-} from 'class-validator';
+import { IsUUID } from 'class-validator';
 import { Album } from '../../album/entities/album.entity';
 import { Artist } from '../../artist/entities/artist.entity';
 import {
