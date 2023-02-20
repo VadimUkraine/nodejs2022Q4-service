@@ -1,79 +1,31 @@
-import { Injectable, HttpException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, HttpException } from '@nestjs/common';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
-import { InMemoryAlbumsStore } from './store/in-memory-albums.store';
 import { constants as httpStatus } from 'http2';
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
-import { albumMessages } from '../messages/error.messages';
-import { TrackService } from '../track/track.service';
-import { AlbumInterface } from './interfaces/album.interface';
-import { ArtistService } from '../artist/artist.service';
+import { albumMessages, artistMessages } from '../messages/error.messages';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Album } from './entities/album.entity';
+import { Artist } from '../artist/entities/artist.entity';
 
 @Injectable()
 export class AlbumService {
   constructor(
-    private store: InMemoryAlbumsStore,
-    private trackService: TrackService,
-    @Inject(forwardRef(() => ArtistService))
-    private artistService: ArtistService,
+    @InjectRepository(Album)
+    private albumRepository: Repository<Album>,
+    @InjectRepository(Artist)
+    private artistRepository: Repository<Artist>,
   ) {}
 
-  async getAlbumsByIds(albums: string[]) {
-    const albumsFromMemory = await this.store.findAll();
-
-    return albumsFromMemory.filter((album: AlbumInterface) =>
-      albums.includes(album.id),
-    );
-  }
-
-  async create(createAlbumDto: CreateAlbumDto) {
-    const { artistId } = createAlbumDto;
-    const notArtisdIdIsUUID = !uuidValidate(artistId);
-
-    if (artistId !== null && notArtisdIdIsUUID) {
-      throw new HttpException(
-        albumMessages.ARTIST_ID_NOT_UUID,
-        httpStatus.HTTP_STATUS_BAD_REQUEST,
-      );
-    }
-
-    if (artistId !== null) {
-      await this.artistService.findOne(artistId);
-    }
-
-    const album = {
-      id: uuidv4(),
-      ...createAlbumDto,
-    };
-
-    await this.store.create(album);
-
-    return album;
-  }
-
   async findAll() {
-    const albums = await this.store.findAll();
+    const albums = await this.albumRepository.find();
 
     return albums;
   }
 
   async findOne(id: string) {
-    const user = await this.store.findOne(id);
-
-    if (!user) {
-      throw new HttpException(
-        albumMessages.ALBUM_NOT_FOUND,
-        httpStatus.HTTP_STATUS_NOT_FOUND,
-      );
-    }
-
-    return user;
-  }
-
-  async update(id: string, updateAlbumDto: UpdateAlbumDto) {
-    const { artistId } = updateAlbumDto;
-    const notArtisdIdIsUUID = !uuidValidate(artistId);
-    const album = await this.store.findOne(id);
+    const album = await this.albumRepository.findOneBy({ id });
 
     if (!album) {
       throw new HttpException(
@@ -82,7 +34,14 @@ export class AlbumService {
       );
     }
 
-    if (artistId !== null && notArtisdIdIsUUID) {
+    return album;
+  }
+
+  async create(createAlbumDto: CreateAlbumDto) {
+    const { artistId } = createAlbumDto;
+    const notArtisIdIsUUID = !uuidValidate(artistId);
+
+    if (artistId !== null && notArtisIdIsUUID) {
       throw new HttpException(
         albumMessages.ARTIST_ID_NOT_UUID,
         httpStatus.HTTP_STATUS_BAD_REQUEST,
@@ -90,21 +49,28 @@ export class AlbumService {
     }
 
     if (artistId !== null) {
-      await this.artistService.findOne(artistId);
+      const artist = await this.artistRepository.findOneBy({ id: artistId });
+
+      if (!artist) {
+        throw new HttpException(
+          artistMessages.ARTIST_NOT_FOUND,
+          httpStatus.HTTP_STATUS_NOT_FOUND,
+        );
+      }
     }
 
-    const updatedAlbum = {
-      ...album,
-      ...updateAlbumDto,
-    };
+    const newAlbum = this.albumRepository.create({
+      id: uuidv4(),
+      ...createAlbumDto,
+    });
 
-    await this.store.update(updatedAlbum.id, updatedAlbum);
-
-    return updatedAlbum;
+    return await this.albumRepository.save(newAlbum);
   }
 
-  async remove(id: string) {
-    const album = await this.store.findOne(id);
+  async update(id: string, updateAlbumDto: UpdateAlbumDto) {
+    const { artistId } = updateAlbumDto;
+    const notArtisIdIsUUID = !uuidValidate(artistId);
+    const album = await this.albumRepository.findOneBy({ id });
 
     if (!album) {
       throw new HttpException(
@@ -113,15 +79,39 @@ export class AlbumService {
       );
     }
 
-    await this.store.remove(album.id);
+    if (artistId !== null && notArtisIdIsUUID) {
+      throw new HttpException(
+        albumMessages.ARTIST_ID_NOT_UUID,
+        httpStatus.HTTP_STATUS_BAD_REQUEST,
+      );
+    }
 
-    const tracks = await this.trackService.findAll();
+    if (artistId !== null) {
+      const artist = await this.artistRepository.findOneBy({ id: artistId });
 
-    for (const track of tracks) {
-      if (track.albumId === album.id) {
-        track.albumId = null;
-        await this.trackService.update(track.id, track);
+      if (!artist) {
+        throw new HttpException(
+          artistMessages.ARTIST_NOT_FOUND,
+          httpStatus.HTTP_STATUS_NOT_FOUND,
+        );
       }
     }
+
+    await this.albumRepository.update(id, { ...updateAlbumDto });
+
+    return await this.albumRepository.findOneBy({ id });
+  }
+
+  async remove(id: string) {
+    const album = await this.albumRepository.findOneBy({ id });
+
+    if (!album) {
+      throw new HttpException(
+        albumMessages.ALBUM_NOT_FOUND,
+        httpStatus.HTTP_STATUS_NOT_FOUND,
+      );
+    }
+
+    await this.albumRepository.delete({ id });
   }
 }

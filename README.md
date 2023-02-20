@@ -4,6 +4,7 @@
 
 - Git - [Download & Install Git](https://git-scm.com/downloads).
 - Node.js - [Download & Install Node.js](https://nodejs.org/en/download/) and the npm package manager.
+- Docker [Download & Install Docker](https://docs.docker.com/engine/install/).
 
 ## Downloading
 
@@ -12,7 +13,7 @@ git clone https://github.com/VadimUkraine/nodejs2022Q4-service.git
 
 cd nodejs2022Q4-service
 
-git checkout docker
+git checkout database
 ```
 
 ## ENV file
@@ -48,35 +49,6 @@ docker-compose up
 After starting the app on port (4000 as default) you can open
 in your browser OpenAPI documentation by typing http://localhost:4000/doc/.
 For more information about OpenAPI/Swagger please visit https://swagger.io/.
-
-## Scan images for vulnerabilities (free solution)
-
-Docker images should be builded.
-
-```
-npm run docker:scan:api
-```
-
-and
-
-```
-npm run docker:scan:db
-```
-
-## Checking built images in DockerHub
-
-API image
-
-```
-docker pull vadim987/nodejs_rss:api
-```
-
-Database image
-
-```
-docker pull vadim987/nodejs_rss:db
-```
-
 
 ## Testing
 

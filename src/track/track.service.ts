@@ -1,30 +1,47 @@
-import { Injectable, HttpException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, HttpException } from '@nestjs/common';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
-import { InMemoryTracksStore } from './store/in-memory-tracks.store';
 import { constants as httpStatus } from 'http2';
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
-import { trackMessages } from '../messages/error.messages';
-import { TrackInterface } from './interfaces/track.interface';
-import { ArtistService } from '../artist/artist.service';
-import { AlbumService } from '../album/album.service';
+import {
+  trackMessages,
+  artistMessages,
+  albumMessages,
+} from '../messages/error.messages';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Track } from './entities/track.entity';
+import { Album } from '../album/entities/album.entity';
+import { Artist } from '../artist/entities/artist.entity';
 
 @Injectable()
 export class TrackService {
   constructor(
-    @Inject(forwardRef(() => AlbumService))
-    private albumService: AlbumService,
-    @Inject(forwardRef(() => ArtistService))
-    private artistService: ArtistService,
-    private store: InMemoryTracksStore,
+    @InjectRepository(Track)
+    private readonly tracksRepository: Repository<Track>,
+    @InjectRepository(Artist)
+    private artistRepository: Repository<Artist>,
+    @InjectRepository(Album)
+    private albumRepository: Repository<Album>,
   ) {}
 
-  async getTracksByIds(tracks: string[]) {
-    const tracksFromMemory = await this.store.findAll();
+  async findAll() {
+    const tracks = await this.tracksRepository.find();
 
-    return tracksFromMemory.filter((track: TrackInterface) =>
-      tracks.includes(track.id),
-    );
+    return tracks;
+  }
+
+  async findOne(id: string) {
+    const track = await this.tracksRepository.findOneBy({ id });
+
+    if (!track) {
+      throw new HttpException(
+        trackMessages.TRACK_NOT_FOUND,
+        httpStatus.HTTP_STATUS_NOT_FOUND,
+      );
+    }
+
+    return track;
   }
 
   async create(createTrackDto: CreateTrackDto) {
@@ -40,7 +57,14 @@ export class TrackService {
     }
 
     if (artistId !== null) {
-      await this.artistService.findOne(artistId);
+      const artist = await this.artistRepository.findOneBy({ id: artistId });
+
+      if (!artist) {
+        throw new HttpException(
+          artistMessages.ARTIST_NOT_FOUND,
+          httpStatus.HTTP_STATUS_NOT_FOUND,
+        );
+      }
     }
 
     if (albumId !== null && notAlbumIdIsUUID) {
@@ -51,36 +75,22 @@ export class TrackService {
     }
 
     if (albumId !== null) {
-      await this.albumService.findOne(albumId);
+      const album = await this.albumRepository.findOneBy({ id: albumId });
+
+      if (!album) {
+        throw new HttpException(
+          albumMessages.ALBUM_NOT_FOUND,
+          httpStatus.HTTP_STATUS_NOT_FOUND,
+        );
+      }
     }
 
-    const track = {
+    const newTrack = await this.tracksRepository.create({
       id: uuidv4(),
       ...createTrackDto,
-    };
+    });
 
-    await this.store.create(track);
-
-    return track;
-  }
-
-  async findAll() {
-    const tracks = await this.store.findAll();
-
-    return tracks;
-  }
-
-  async findOne(id: string) {
-    const track = await this.store.findOne(id);
-
-    if (!track) {
-      throw new HttpException(
-        trackMessages.TRACK_NOT_FOUND,
-        httpStatus.HTTP_STATUS_NOT_FOUND,
-      );
-    }
-
-    return track;
+    return await this.tracksRepository.save(newTrack);
   }
 
   async update(id: string, updateTrackDto: UpdateTrackDto) {
@@ -88,7 +98,7 @@ export class TrackService {
     const notArtisdIdIsUUID = !uuidValidate(artistId);
     const notAlbumIdIsUUID = !uuidValidate(albumId);
 
-    const track = await this.store.findOne(id);
+    const track = await this.tracksRepository.findOneBy({ id });
 
     if (!track) {
       throw new HttpException(
@@ -105,7 +115,14 @@ export class TrackService {
     }
 
     if (artistId !== null) {
-      await this.artistService.findOne(artistId);
+      const artist = await this.artistRepository.findOneBy({ id: artistId });
+
+      if (!artist) {
+        throw new HttpException(
+          artistMessages.ARTIST_NOT_FOUND,
+          httpStatus.HTTP_STATUS_NOT_FOUND,
+        );
+      }
     }
 
     if (albumId !== null && notAlbumIdIsUUID) {
@@ -116,21 +133,23 @@ export class TrackService {
     }
 
     if (albumId !== null) {
-      await this.albumService.findOne(albumId);
+      const album = await this.albumRepository.findOneBy({ id: albumId });
+
+      if (!album) {
+        throw new HttpException(
+          albumMessages.ALBUM_NOT_FOUND,
+          httpStatus.HTTP_STATUS_NOT_FOUND,
+        );
+      }
     }
 
-    const updatedTrack = {
-      ...track,
-      ...updateTrackDto,
-    };
+    await this.tracksRepository.update(id, { ...updateTrackDto });
 
-    await this.store.update(updatedTrack.id, updatedTrack);
-
-    return updatedTrack;
+    return await this.tracksRepository.findOneBy({ id });
   }
 
   async remove(id: string) {
-    const track = await this.store.findOne(id);
+    const track = await this.tracksRepository.findOneBy({ id });
 
     if (!track) {
       throw new HttpException(
@@ -139,6 +158,6 @@ export class TrackService {
       );
     }
 
-    await this.store.remove(track.id);
+    await this.tracksRepository.delete({ id });
   }
 }

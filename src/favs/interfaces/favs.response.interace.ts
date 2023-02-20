@@ -1,9 +1,15 @@
-import { ArtistInterface } from '../../artist/interfaces/artist.interface';
-import { AlbumInterface } from '../../album/interfaces/album.interface';
-import { TrackInterface } from '../../track/interfaces/track.interface';
+import { Track } from '../../track/entities/track.entity';
+import { Album } from '../../album/entities/album.entity';
+import { Artist } from '../../artist/entities/artist.entity';
 
 export interface FavoritesRepsonse {
-  artists: ArtistInterface[];
-  albums: AlbumInterface[];
-  tracks: TrackInterface[];
+  artistIds: Artist['id'][];
+  albumIds: Album['id'][];
+  trackIds: Track['id'][];
+}
+
+export interface FavsResponse {
+  artists: Artist[];
+  albums: Album[];
+  tracks: Track[];
 }

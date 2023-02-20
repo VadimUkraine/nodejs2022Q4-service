@@ -1,44 +1,31 @@
 import { Injectable, HttpException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { InMemoryUsersStore } from './store/in-memory-users.store';
 import { getTimestamp, getNormalizedUser } from '../helpers';
 import { v4 as uuidv4 } from 'uuid';
 import { USER_VERSION_INCREMENT } from './user.constants';
 import { userMessages } from '../messages/error.messages';
 import { constants as httpStatus } from 'http2';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UserService {
-  constructor(private store: InMemoryUsersStore) {}
-
-  async create(createUserDto: CreateUserDto) {
-    const timestamp = getTimestamp();
-
-    const user = {
-      id: uuidv4(),
-      version: 1,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-      ...createUserDto,
-    };
-
-    await this.store.create(user);
-
-    const normalizedUser = getNormalizedUser(user);
-
-    return normalizedUser;
-  }
+  constructor(
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
+  ) {}
 
   async findAll() {
-    const users = await this.store.findAll();
+    const users = await this.usersRepository.find();
     const normalizedUsers = users.map((user) => getNormalizedUser(user));
 
     return normalizedUsers;
   }
 
   async findOne(id: string) {
-    const user = await this.store.findOne(id);
+    const user = await this.usersRepository.findOneBy({ id });
 
     if (!user) {
       throw new HttpException(
@@ -52,8 +39,21 @@ export class UserService {
     return normalizedUser;
   }
 
+  async create(createUserDto: CreateUserDto) {
+    const user = await this.usersRepository.create({
+      ...createUserDto,
+      id: uuidv4(),
+    });
+
+    const normalizedUser = getNormalizedUser(
+      await this.usersRepository.save(user),
+    );
+
+    return normalizedUser;
+  }
+
   async update(id: string, updateUserDto: UpdateUserDto) {
-    const user = await this.store.findOne(id);
+    const user = await this.usersRepository.findOneBy({ id });
 
     if (!user) {
       throw new HttpException(
@@ -69,19 +69,21 @@ export class UserService {
       );
     }
 
-    user.password = updateUserDto.newPassword;
-    user.version += USER_VERSION_INCREMENT;
-    user.updatedAt = getTimestamp();
+    await this.usersRepository.update(id, {
+      password: updateUserDto.newPassword,
+      version: user.version + USER_VERSION_INCREMENT,
+      updatedAt: getTimestamp(),
+    });
 
-    await this.store.update(user.id, user);
-
-    const normalizedUser = getNormalizedUser(user);
+    const normalizedUser = getNormalizedUser(
+      await this.usersRepository.findOneBy({ id }),
+    );
 
     return normalizedUser;
   }
 
   async remove(id: string) {
-    const user = await this.store.findOne(id);
+    const user = await this.usersRepository.findOneBy({ id });
 
     if (!user) {
       throw new HttpException(
@@ -90,6 +92,6 @@ export class UserService {
       );
     }
 
-    await this.store.remove(user.id);
+    await this.usersRepository.delete({ id });
   }
 }
