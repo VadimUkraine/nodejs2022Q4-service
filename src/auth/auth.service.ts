@@ -1,26 +1,81 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { Injectable, Inject, forwardRef, HttpException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { Repository } from 'typeorm';
+import { User } from '../user/entities/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { CreateUserDto } from '../user/dto/create-user.dto';
+import { UserService } from '../user/user.service';
+import { userMessages, tokenMessages } from '../messages/error.messages';
+import { constants as httpStatus } from 'http2';
+import { env } from 'process';
+import { compare } from 'bcrypt';
+import { RefreshTokenDto } from './entities/auth.entity';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+  constructor(
+    private jwtService: JwtService,
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
+    @Inject(forwardRef(() => UserService))
+    private userService: UserService,
+  ) {}
+
+  async generateJWTTokens({ id, login }) {
+    const accessToken = await this.jwtService.signAsync(
+      { id, login },
+      { expiresIn: env.TOKEN_EXPIRE_TIME },
+    );
+
+    const refreshToken = await this.jwtService.signAsync(
+      { id, login },
+      { expiresIn: env.TOKEN_REFRESH_EXPIRE_TIME },
+    );
+
+    return { accessToken, refreshToken };
   }
 
-  findAll() {
-    return `This action returns all auth`;
+  async signup(createAuthDto: CreateUserDto) {
+    return await this.userService.create(createAuthDto);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
+  async login(loginAuthData: CreateUserDto) {
+    const users = await this.usersRepository.findBy({
+      login: loginAuthData.login,
+    });
+    const targetUser = users.find((user) =>
+      compare(loginAuthData.password, user.password),
+    );
+
+    if (!targetUser) {
+      throw new HttpException(
+        userMessages.USER_NOT_FOUND,
+        httpStatus.HTTP_STATUS_FORBIDDEN,
+      );
+    }
+
+    return await this.generateJWTTokens(targetUser);
   }
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
+  async refresh(tokenData: RefreshTokenDto) {
+    const { refreshToken } = tokenData;
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+    if (!refreshToken || refreshToken.length === 0) {
+      throw new HttpException(
+        tokenMessages.NO_REFRESH_TOKEN,
+        httpStatus.HTTP_STATUS_UNAUTHORIZED,
+      );
+    }
+
+    try {
+      const user = await this.jwtService.verifyAsync(tokenData.refreshToken);
+
+      return await this.generateJWTTokens({ id: user.id, login: user.login });
+    } catch {
+      throw new HttpException(
+        tokenMessages.REFRESH_TOKEN_IS_INVALID,
+        httpStatus.HTTP_STATUS_FORBIDDEN,
+      );
+    }
   }
 }

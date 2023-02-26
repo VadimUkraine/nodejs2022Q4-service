@@ -9,6 +9,8 @@ import { constants as httpStatus } from 'http2';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import { env } from 'process';
+import { compare, hash } from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -45,6 +47,11 @@ export class UserService {
       id: uuidv4(),
     });
 
+    user.password = await hash(
+      createUserDto.password,
+      parseInt(env.CRYPT_SALT),
+    );
+
     const normalizedUser = getNormalizedUser(
       await this.usersRepository.save(user),
     );
@@ -62,7 +69,12 @@ export class UserService {
       );
     }
 
-    if (user.password !== updateUserDto.oldPassword) {
+    const isPasswordsMatch = await compare(
+      updateUserDto.oldPassword,
+      user.password,
+    );
+
+    if (!isPasswordsMatch) {
       throw new HttpException(
         userMessages.INVALID_PASSWORD,
         httpStatus.HTTP_STATUS_FORBIDDEN,
@@ -70,7 +82,7 @@ export class UserService {
     }
 
     await this.usersRepository.update(id, {
-      password: updateUserDto.newPassword,
+      password: await hash(updateUserDto.newPassword, parseInt(env.CRYPT_SALT)),
       version: user.version + USER_VERSION_INCREMENT,
       updatedAt: getTimestamp(),
     });

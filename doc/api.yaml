@@ -117,7 +117,44 @@ security:
   - bearerAuth: []
 
 paths:
-  /login:
+  /auth/refresh:
+    post:
+      tags:
+        - Refresh
+      security: []
+      summary: Refresh
+      description: Logins a user and returns a JWT-token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              title: example
+              properties:
+                login:
+                  type: string
+                  description: Username
+                password:
+                  type: string
+                  description: Password
+              required:
+                - user
+                - login
+      responses:
+        200:
+          description: Successful login.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                description: JWT Token
+        403:
+          description: Incorrect login or password
+  /auth/login:
     post:
       tags:
         - Login
@@ -154,7 +191,7 @@ paths:
                 description: JWT Token
         403:
           description: Incorrect login or password
-  /signup:
+  /auth/signup:
     post:
       tags:
         - Signup

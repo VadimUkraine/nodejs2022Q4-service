@@ -24,10 +24,16 @@ const favsMessages = {
   ARTIST_NOT_IN_FAVS: 'There is no such artist in favorites',
 };
 
+const tokenMessages = {
+  NO_REFRESH_TOKEN: 'No refresh token in body',
+  REFRESH_TOKEN_IS_INVALID: 'Refresh token is invalid or expired',
+};
+
 export {
   userMessages,
   artistMessages,
   albumMessages,
   trackMessages,
   favsMessages,
+  tokenMessages,
 };
