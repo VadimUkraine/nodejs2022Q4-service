@@ -123,7 +123,7 @@ paths:
         - Refresh
       security: []
       summary: Refresh
-      description: Logins a user and returns a JWT-token
+      description: Refresh expired JWT-token and return new JWT-tokens (accessToken and refreshToken)
       requestBody:
         required: true
         content:
@@ -132,35 +132,36 @@ paths:
               type: object
               title: example
               properties:
-                login:
+                refreshToken:
                   type: string
-                  description: Username
-                password:
-                  type: string
-                  description: Password
+                  description: Refresh Token
               required:
-                - user
-                - login
+                - refreshToken
       responses:
         200:
-          description: Successful login.
+          description: Successful refresh
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  token:
+                  accessToken:
                     type: string
-                description: JWT Token
+                    description: JWT Token
+                  refreshToken:
+                    type: string
+                    description: JWT Token
+        401:
+          description: No refresh Token in body
         403:
-          description: Incorrect login or password
+          description: Refresh token is invalid or expired
   /auth/login:
     post:
       tags:
         - Login
       security: []
       summary: Login
-      description: Logins a user and returns a JWT-token
+      description: Logins a user and returns a JWT-tokens
       requestBody:
         required: true
         content:
@@ -186,9 +187,14 @@ paths:
               schema:
                 type: object
                 properties:
-                  token:
+                  accessToken:
                     type: string
-                description: JWT Token
+                    description: JWT Token
+                  refreshToken:
+                    type: string
+                    description: JWT Token
+        400:
+          description: No login or password, or they are not strings
         403:
           description: Incorrect login or password
   /auth/signup:
@@ -220,12 +226,14 @@ paths:
                 - login
                 - password
       responses:
-        204:
+        201:
           description: Successful signup
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
         400:
-          description: Bad request
-        409:
-          description: Conflict. Login already exists
+          description: No login or password, or they are not strings
   /user:
     get:
       tags:
