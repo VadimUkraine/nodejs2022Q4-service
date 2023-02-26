@@ -8,6 +8,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeormConfig } from './orm.config';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { typeormConfig } from './orm.config';
     TrackModule,
     FavsModule,
     TypeOrmModule.forRoot({ ...typeormConfig, autoLoadEntities: true }),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
