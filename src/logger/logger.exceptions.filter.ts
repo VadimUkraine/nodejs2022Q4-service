@@ -42,6 +42,8 @@ export class LoggingExceptionsFilter implements ExceptionFilter {
       message: message,
     };
 
+    this.logger.writeResponse(httpStatus, JSON.stringify(responseBody));
+
     httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
   }
 }
