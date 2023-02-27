@@ -1,6 +1,13 @@
 import { LoggerService } from '@nestjs/common';
 
 export class CustomMyLogger implements LoggerService {
+
+  constructor(
+
+  ) {
+
+  
+  }
   /**
    * Write a 'log' level log.
    */
@@ -17,7 +24,15 @@ export class CustomMyLogger implements LoggerService {
   /**
    * Write an 'error' level log.
    */
-  error(message: any, ...optionalParams: any[]) {}
+  // error(message: any, ...optionalParams: any[]) {}
+
+  error(message: any, ...optionalParams: any[]): any {
+
+    const logLine = `${message} ${optionalParams.join(' ')}` + '\n';
+
+    process.stdout.write(logLine);
+  }
+
 
   /**
    * Write a 'warn' level log.

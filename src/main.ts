@@ -14,8 +14,6 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
-  // app.useLogger(app.get(CustomMyLogger));
-
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );

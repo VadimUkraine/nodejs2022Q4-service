@@ -40,21 +40,20 @@ export class AuthService {
   }
 
   async login(loginAuthData: CreateUserDto) {
-    const users = await this.usersRepository.findBy({
+    const user = await this.usersRepository.findOneBy({
       login: loginAuthData.login,
     });
-    const targetUser = users.find((user) =>
-      compare(loginAuthData.password, user.password),
-    );
 
-    if (!targetUser) {
+    const isPasswordsMatch = await compare(loginAuthData.password, user.password);
+
+    if (!isPasswordsMatch || !user) {
       throw new HttpException(
         userMessages.USER_NOT_FOUND,
         httpStatus.HTTP_STATUS_FORBIDDEN,
       );
     }
 
-    return await this.generateJWTTokens(targetUser);
+    return await this.generateJWTTokens(user);
   }
 
   async refresh(tokenData: RefreshTokenDto) {
