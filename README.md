@@ -13,7 +13,7 @@ git clone https://github.com/VadimUkraine/nodejs2022Q4-service.git
 
 cd nodejs2022Q4-service
 
-git checkout database
+git checkout auth_and_logging
 ```
 
 ## ENV file
